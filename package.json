@@ -1,0 +1,21 @@
+{
+  "name": "i3bar-hub",
+  "version": "0.1.0",
+  "description": "i3bar client to consolidate several other i3bar clients",
+  "main": "index.coffee",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Florian Hassanen",
+    "email": "florian.hassanen@gmail.com"
+  },
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/H4ssi/i3bar.js.git"
+  },
+  "dependencies": {
+    "oboe": "^2.1.2"
+  }
+}
