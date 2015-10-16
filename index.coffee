@@ -19,6 +19,7 @@ class Client extends EventEmitter
       @cont_signal = if header.cont_signal? then sig.getSignalName(header.cont_signal) else 'SIGCONT'
       @click_events = !!header.click_events
       @process.stdin.write '[' if @click_events
+      @emit 'ready'
 
     processData = (boxes) =>
       @emit('msg', boxes...)
@@ -32,14 +33,34 @@ class Client extends EventEmitter
 
   click: (event) -> @process.stdin.write JSON.stringify(event) + ',' if @click_events
 
-  stop: () -> process.kill @process.pid, @stop_signal
-  cont: () -> process.kill @process.pid, @cont_signal
+  stop: -> process.kill @process.pid, @stop_signal
+  cont: -> process.kill @process.pid, @cont_signal
 
-c = new Client 'i3status -c ~/.i3/status'
+clients = [(new Client 'node ' + __dirname + '/click_example.js'), (new Client 'i3status -c ~/.i3/status')]
 
-p = proto({version: c.version, click_events: c.click_events})
+i = 0
+for c in clients
+  c.on 'ready', ->
+    start() if ++i == clients.length
 
-p.on 'stop', -> c.stop()
-p.on 'cont', -> c.cont()
-p.on 'click', (e) -> c.click(e)
-c.on 'msg', (boxes...) -> p.send(boxes...)
+start = ->
+  version = Math.max (c.version for c in clients)...
+  click_events = clients.some (c) -> c.click_events
+
+  p = proto({version: version, click_events: click_events})
+
+  p.on 'stop', -> c.stop() for c in clients
+  p.on 'cont', -> c.cont() for c in clients
+  p.on 'click', (e) -> c.click e for c in clients
+
+  cache = []
+
+  send = ->
+    msgs = [].concat cache...
+    p.send msgs...
+
+  for c,i in clients
+    do (i) ->
+      c.on 'msg', (msgs...) ->
+        cache[i] = msgs
+        send()
