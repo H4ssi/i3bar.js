@@ -16,6 +16,7 @@
     "url": "https://github.com/H4ssi/i3bar.js.git"
   },
   "dependencies": {
+    "get-signal": "^1.0.0",
     "oboe": "^2.1.2"
   },
   "devDependencies": {
