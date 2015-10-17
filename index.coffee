@@ -24,12 +24,14 @@ class Client extends EventEmitter
     processData = (boxes) =>
       @emit('msg', boxes...)
 
-    o = oboe(@process.stdout)
-    o.node('{version}', (header) ->
+    o = oboe @process.stdout
+
+    o.node '{version}', (header) ->
       @forget()
-      processHeader(header)
-      o.node('![*]', processData)
-      oboe.drop)
+      processHeader header
+      oboe.drop
+
+    o.node '![*]', processData
 
   click: (event) -> @process.stdin.write JSON.stringify(event) + ',' if @click_events
 
@@ -38,10 +40,28 @@ class Client extends EventEmitter
 
 clients = [(new Client 'node ' + __dirname + '/click_example.js'), (new Client 'i3status -c ~/.i3/status')]
 
-i = 0
-for c in clients
+p = null
+
+cache = []
+pending = false
+send = ->
+  if p == null
+    setImmediate -> send()
+  else if not pending
+    pending = true
+    setImmediate ->
+      pending = false
+      msgs = [].concat cache...
+      p.send msgs...
+
+readyCount = 0
+for c, i in clients
   c.on 'ready', ->
-    start() if ++i == clients.length
+    start() if ++readyCount == clients.length
+  do (i) ->
+    c.on 'msg', (msgs...) ->
+      cache[i] = msgs
+      send()
 
 start = ->
   version = Math.max (c.version for c in clients)...
@@ -53,19 +73,3 @@ start = ->
   p.on 'cont', -> c.cont() for c in clients
   p.on 'click', (e) -> c.click e for c in clients
 
-  cache = []
-
-  pending = false
-  send = ->
-    if not pending
-      pending = true
-      setImmediate ->
-        pending = false
-        msgs = [].concat cache...
-        p.send msgs...
-
-  for c,i in clients
-    do (i) ->
-      c.on 'msg', (msgs...) ->
-        cache[i] = msgs
-        send()
