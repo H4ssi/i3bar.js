@@ -55,9 +55,14 @@ start = ->
 
   cache = []
 
+  pending = false
   send = ->
-    msgs = [].concat cache...
-    p.send msgs...
+    if not pending
+      pending = true
+      setImmediate ->
+        pending = false
+        msgs = [].concat cache...
+        p.send msgs...
 
   for c,i in clients
     do (i) ->
