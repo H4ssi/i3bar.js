@@ -45,7 +45,7 @@ class NodeClient extends EventEmitter
     @toClient = new stream.PassThrough()
     fromClient = new stream.PassThrough()
 
-    client = clientModule({input: @toClient, output: fromClient})
+    @client = clientModule({input: @toClient, output: fromClient, signals: false})
 
     processHeader = (header) =>
       @version = header.version
@@ -68,6 +68,9 @@ class NodeClient extends EventEmitter
     o.node '![*]', processData
 
   click: (event) -> @toClient.write JSON.stringify(event) + ',' if @click_events
+
+  stop: -> @client.stop
+  cont: -> @client.cont
 
 clients = [(new NodeClient __dirname + '/click_example'), (new Client 'i3status -c ~/.i3/status')]
 

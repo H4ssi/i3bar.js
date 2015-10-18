@@ -19,4 +19,6 @@ module.exports = exports = (options = {}) ->
 
   p.send def
 
+  p
+
 exports() if require.main == module
