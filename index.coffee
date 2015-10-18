@@ -1,5 +1,4 @@
 
-process = require 'process'
 child = require 'child_process'
 
 oboe = require 'oboe'

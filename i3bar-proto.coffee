@@ -1,5 +1,4 @@
 
-process = require 'process'
 EventEmitter = require 'events'
 sig = require 'get-signal'
 oboe = require 'oboe'
