@@ -6,10 +6,17 @@ oboe = require 'oboe'
 module.exports = (options = {}) ->
   header =
     version: options.version ? 1
-    stop_signal: sig.getSignalNumber('SIGUSR2') # SIGSTOP (default) cannot be used in node
+    stop_signal: 'SIGUSR2' # SIGSTOP (default) cannot be used in node
   header.stop_signal = options.stop_signal if options.stop_signal?
   header.cont_signal = options.cont_signal if options.cont_signal?
   header.click_events = options.click_events if options.click_events?
+
+  stop_signal = header.stop_signal
+  cont_signal = header.cont_signal ? 'SIGCONT'
+
+  # i3bar needs signal numbers, not names
+  header.stop_signal = sig.getSignalNumber header.stop_signal
+  header.cont_signal = sig.getSignalNumber header.cont_signal if header.cont_signal?
 
   e = new EventEmitter()
 
@@ -18,11 +25,9 @@ module.exports = (options = {}) ->
 
   e.send = (msg...) -> output.write JSON.stringify(msg) + ','
 
-  stop_signal = sig.getSignalName(header.stop_signal)
-  process.on(stop_signal, -> e.emit('stop'))
+  process.on stop_signal, -> e.emit 'stop'
 
-  cont_signal = if header.cont_signal? then sig.getSignalName(header.cont_signal) else 'SIGCONT'
-  process.on(cont_signal, -> e.emit('cont'))
+  process.on cont_signal, -> e.emit 'cont'
 
   if header.click_events
     input = options.input ? process.stdin
