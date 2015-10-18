@@ -2,12 +2,9 @@
 proto = require './i3bar-proto'
 
 module.exports = exports = (options = {}) ->
-  o =
-    click_events: true
-  o.output = options.output if options.output?
-  o.input = options.input if options.input?
+  options.click_events = true
 
-  p = proto o
+  p = proto options
 
   text = (t) -> {full_text: t}
 
@@ -17,7 +14,7 @@ module.exports = exports = (options = {}) ->
     p.send (text JSON.stringify e), def
     setTimeout (-> p.send def), 1000
 
-  p.send def
+  process.nextTick -> p.send def
 
   p
 

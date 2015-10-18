@@ -1,6 +1,5 @@
 
 child = require 'child_process'
-stream = require 'stream'
 
 oboe = require 'oboe'
 
@@ -42,32 +41,14 @@ class NodeClient extends EventEmitter
   constructor: (clientModule) ->
     clientModule = require clientModule
 
-    @toClient = new stream.PassThrough()
-    fromClient = new stream.PassThrough()
+    @client = clientModule({cb: (msgs) => @emit 'msg', msgs...})
 
-    @client = clientModule({input: @toClient, output: fromClient, signals: false})
+    @version = @client.header.version
+    @click_events = !!@client.header.click_events
 
-    processHeader = (header) =>
-      @version = header.version
-      @stop_signal = if header.stop_signal? then sig.getSignalName(header.stop_signal) else 'SIGSTOP'
-      @cont_signal = if header.cont_signal? then sig.getSignalName(header.cont_signal) else 'SIGCONT'
-      @click_events = !!header.click_events
-      @toClient.write '[' if @click_events
-      @emit 'ready'
+    process.nextTick => @emit 'ready'
 
-    processData = (boxes) =>
-      @emit('msg', boxes...)
-
-    o = oboe fromClient
-
-    o.node '{version}', (header) ->
-      @forget()
-      processHeader header
-      oboe.drop
-
-    o.node '![*]', processData
-
-  click: (event) -> @toClient.write JSON.stringify(event) + ',' if @click_events
+  click: (event) -> @client.click event
 
   stop: -> @client.stop
   cont: -> @client.cont
