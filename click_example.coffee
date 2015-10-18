@@ -1,14 +1,22 @@
 
 proto = require './i3bar-proto'
 
-p = proto {click_events: true}
+module.exports = exports = (options = {}) ->
+  o =
+    click_events: true
+  o.output = options.output if options.output?
+  o.input = options.input if options.input?
 
-text = (t) -> {full_text: t}
+  p = proto o
 
-def = text 'x'
+  text = (t) -> {full_text: t}
 
-p.on 'click', (e) ->
-  p.send (text JSON.stringify(e)), def
-  setTimeout (-> p.send def), 1000
+  def = text 'x'
 
-p.send def
+  p.on 'click', (e) ->
+    p.send (text JSON.stringify e), def
+    setTimeout (-> p.send def), 1000
+
+  p.send def
+
+exports() if require.main == module

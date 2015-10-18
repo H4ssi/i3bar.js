@@ -1,5 +1,6 @@
 
 child = require 'child_process'
+stream = require 'stream'
 
 oboe = require 'oboe'
 
@@ -37,7 +38,38 @@ class Client extends EventEmitter
   stop: -> process.kill @process.pid, @stop_signal
   cont: -> process.kill @process.pid, @cont_signal
 
-clients = [(new Client 'node ' + __dirname + '/click_example.js'), (new Client 'i3status -c ~/.i3/status')]
+class NodeClient extends EventEmitter
+  constructor: (clientModule) ->
+    clientModule = require clientModule
+
+    @toClient = new stream.PassThrough()
+    fromClient = new stream.PassThrough()
+
+    client = clientModule({input: @toClient, output: fromClient})
+
+    processHeader = (header) =>
+      @version = header.version
+      @stop_signal = if header.stop_signal? then sig.getSignalName(header.stop_signal) else 'SIGSTOP'
+      @cont_signal = if header.cont_signal? then sig.getSignalName(header.cont_signal) else 'SIGCONT'
+      @click_events = !!header.click_events
+      @toClient.write '[' if @click_events
+      @emit 'ready'
+
+    processData = (boxes) =>
+      @emit('msg', boxes...)
+
+    o = oboe fromClient
+
+    o.node '{version}', (header) ->
+      @forget()
+      processHeader header
+      oboe.drop
+
+    o.node '![*]', processData
+
+  click: (event) -> @toClient.write JSON.stringify(event) + ',' if @click_events
+
+clients = [(new NodeClient __dirname + '/click_example'), (new Client 'i3status -c ~/.i3/status')]
 
 p = null
 
