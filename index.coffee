@@ -53,7 +53,7 @@ class NodeClient extends EventEmitter
   stop: -> @client.stop
   cont: -> @client.cont
 
-clients = [(new NodeClient __dirname + '/click_example'), (new Client 'i3status -c ~/.i3/status')]
+clients = [(new NodeClient __dirname + '/click_example'), (new NodeClient __dirname + '/clock'), (new Client 'i3status -c ~/.i3/status')]
 
 p = null
 
