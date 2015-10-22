@@ -38,10 +38,12 @@ class Client extends EventEmitter
   cont: -> process.kill @process.pid, @cont_signal
 
 class NodeClient extends EventEmitter
-  constructor: (clientModule) ->
+  constructor: (clientModule, exportedFnName = null) ->
     clientModule = require clientModule
 
-    @client = clientModule({cb: (msgs) => @emit 'msg', msgs...})
+    clientFn = if exportedFnName? then clientModule[exportedFnName] else clientModule
+
+    @client = clientFn({cb: (msgs) => @emit 'msg', msgs...})
 
     @version = @client.header.version
     @click_events = !!@client.header.click_events
@@ -53,7 +55,11 @@ class NodeClient extends EventEmitter
   stop: -> @client.stop
   cont: -> @client.cont
 
-clients = [(new NodeClient __dirname + '/click_example'), (new NodeClient __dirname + '/clock'), (new Client 'i3status -c ~/.i3/status')]
+clients = [
+  (new NodeClient __dirname + '/click_example'),
+  (new NodeClient __dirname + '/clock', 'time'),
+  (new NodeClient __dirname + '/clock', 'date'),
+  (new Client 'i3status -c ~/.i3/status')]
 
 p = null
 
