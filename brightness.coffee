@@ -15,6 +15,9 @@ module.exports = exports = (options = {}) ->
 
   i = ipc -> i.send 'SUBSCRIBE', JSON.stringify ['binding']
 
+  clearTimeoutId = null
+  clear = -> b.send()
+
   display = (percent) ->
     max = 10
     dots = Math.round percent / 100 * max
@@ -23,9 +26,8 @@ module.exports = exports = (options = {}) ->
 
     b.send {full_text: bar}
 
-    setTimeout clear, 1000
-
-  clear = -> b.send()
+    clearTimeout clearTimeoutId if clearTimeoutId?
+    clearTimeoutId = setTimeout clear, 1000
 
   i.on 'binding', (d) ->
     d = JSON.parse d
