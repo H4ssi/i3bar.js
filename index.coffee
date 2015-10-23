@@ -56,6 +56,7 @@ class NodeClient extends EventEmitter
   cont: -> @client.cont
 
 clients = [
+  (new NodeClient __dirname + '/brightness'),
   (new NodeClient __dirname + '/click_example'),
   (new NodeClient __dirname + '/clock', 'time'),
   (new NodeClient __dirname + '/clock', 'date'),

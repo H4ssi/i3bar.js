@@ -1,4 +1,4 @@
-
+_ = require 'lodash'
 bar = require './i3bar-proto'
 ipc = require './i3-proto'
 
@@ -15,6 +15,18 @@ module.exports = exports = (options = {}) ->
 
   i = ipc -> i.send 'SUBSCRIBE', JSON.stringify ['binding']
 
+  display = (percent) ->
+    max = 10
+    dots = Math.round percent / 100 * max
+
+    bar = (_.repeat ' ', max - dots) + (_.repeat '#', dots)
+
+    b.send {full_text: bar}
+
+    setTimeout clear, 1000
+
+  clear = -> b.send()
+
   i.on 'binding', (d) ->
     d = JSON.parse d
 
@@ -22,8 +34,10 @@ module.exports = exports = (options = {}) ->
       com = d.binding.command
 
       if com == 'exec true i3barjs brightness up'
-        run '-inc', console.log.bind console
+        run '-inc', display
       else if com == 'exec true i3barjs brightness down'
-        run '-dec', console.log.bind console
+        run '-dec', display
 
-exports() if module.main = module
+  b
+
+exports() if require.main == module
