@@ -30,6 +30,7 @@ module.exports = exports = (options = {}) ->
     clearTimeoutId = setTimeout clear, 1000
 
   i.on 'binding', (d) ->
+    return if d.startsWith 'undefined:' # sometimes ipc sends 'undefined:1' message?
     d = JSON.parse d
 
     if d.binding?.command?
