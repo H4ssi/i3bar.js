@@ -1,9 +1,14 @@
 
+_ = require 'lodash'
 EventEmitter = require 'events'
 sig = require 'get-signal'
 oboe = require 'oboe'
 
-module.exports = (options = {}) ->
+module.exports = (options = {}, connectListener = null) ->
+  if _.isFunction options
+    connectListener = options
+    options = {}
+
   header =
     version: options.version ? 1
   header.click_events = !!options.click_events if options.click_events?
@@ -13,6 +18,8 @@ module.exports = (options = {}) ->
   e.stop = -> e.emit 'stop'
   e.cont = -> e.emit 'cont'
   e.click = (event) -> e.emit 'click', event
+
+  e.once 'connect', connectListener if connectListener?
 
   if options.cb? # callback given, use js as interface
     e.send = (msg...) -> options.cb msg
@@ -39,5 +46,6 @@ module.exports = (options = {}) ->
 
       o.node '![*]', e.click.bind e
 
+  process.nextTick -> e.emit 'connect'
   e
 
