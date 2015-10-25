@@ -4,8 +4,6 @@ moment = require 'moment'
 
 clock = (format, advance) ->
   (options = {}) ->
-    p = proto options
-
     time = () ->
       now = moment()
       p.send {full_text: format now}
@@ -13,9 +11,7 @@ clock = (format, advance) ->
       next = advance moment now
       setTimeout time, (next.diff now)
 
-    process.nextTick time
-
-    p
+    p = proto options, time
 
 exports.time = clock ((m) -> m.format 'HH:mm'), ((m) -> (m.startOf 'minute').add 1, 'minutes')
 exports.date = clock ((m) -> m.format 'D.M.YYYY'), ((m) -> (m.startOf 'day').add 1, 'days')
