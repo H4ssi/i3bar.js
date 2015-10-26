@@ -34,8 +34,8 @@ class Client extends EventEmitter
 
   click: (event) -> @process.stdin.write JSON.stringify(event) + ',' if @click_events
 
-  stop: -> process.kill @process.pid, @stop_signal
-  cont: -> process.kill @process.pid, @cont_signal
+  stop: -> @process.kill @stop_signal
+  cont: -> @process.kill @cont_signal
 
 class NodeClient extends EventEmitter
   constructor: (clientModule, exportedFnName = null) ->
