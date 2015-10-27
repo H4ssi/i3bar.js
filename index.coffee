@@ -10,7 +10,7 @@ EventEmitter = require 'events'
 
 class Client extends EventEmitter
   constructor: (cmd_line) ->
-    @process = child.spawn 'bash', ['-c', cmd_line]
+    @process = child.spawn 'bash', ['-c', 'exec ' + cmd_line]
 
     processHeader = (header) =>
       @version = header.version
