@@ -39,7 +39,9 @@ module.exports = (options = {}, connectListener = null) ->
 
     e.send = (msg...) -> output.write (JSON.stringify msg) + ','
 
-    if header.click_events
+    unless header.click_events
+      process.stdin.resume()
+    else
       input = options.input ? process.stdin
 
       o = oboe input
