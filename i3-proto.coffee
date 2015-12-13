@@ -3,6 +3,7 @@ os = require 'os'
 net = require 'net'
 child = require 'child_process'
 EventEmitter = require 'events'
+Transform = (require 'stream').Transform
 
 spawnChild = ->
   child.execFile 'i3', ['--get-socketpath'], (err, stdout, stderr) -> connectToSocket stdout.trim()
@@ -26,13 +27,42 @@ pack = (msgType, payload) ->
 
   b
 
-unpack = (b) ->
-  len = readInt b, 0 + magicLen
-  msgType = readInt b, 0 + magicLen + 4
-  {
-    type: msgType
-    payload: b.toString 'utf8', 0 + magicLen + 4 + 4, 0 + magicLen + 4 + 4 + len
-  }
+class I3ipcTransform extends Transform
+  constructor: (options = {}) ->
+    @chunks = []
+    @len = null
+    options.objectMode = true
+    super options
+
+  _unpack_len: (b) ->
+    return unless b.length >= magicLen + 4
+
+    @len = readInt b, magicLen
+
+  _unpack_data: (b) ->
+    return null unless b.length >= magicLen + 4 + 4 + @len
+
+    @chunks = [b.slice magicLen + 4 + 4 + @len]
+    {
+      type: readInt b, magicLen + 4
+      payload: b.toString 'utf8', magicLen + 4 + 4, 0 + magicLen + 4 + 4 + @len
+    }
+
+  _transform: (chunk, str, cb) ->
+    @chunks.push chunk
+
+    b = Buffer.concat(@chunks)
+
+    @_unpack_len b unless @len?
+
+    if @len?
+      data = @_unpack_data b
+      if data?
+        @len = null
+        @push data
+
+    cb()
+
 
 requests =
   COMMAND: 0
@@ -67,8 +97,7 @@ e = new EventEmitter()
 connectToSocket = (path) ->
   socket = net.connect path, -> e.emit 'connected'
 
-  socket.on 'data', (d) ->
-    reply = unpack d
+  (socket.pipe new I3ipcTransform()).on 'data', (reply) ->
     typeName = responses[reply.type]
     event = typeName
     unless event?
