@@ -16,18 +16,27 @@ magicLen = Buffer.byteLength magicString
 
 msgLen = (payloadLen) -> magicLen + 4 + 4 + payloadLen
 
-pack = (msgType, payload) ->
-  payloadLen = Buffer.byteLength payload
-  b = new Buffer msgLen payloadLen
+class I3ipcOut extends Transform
+  constructor: (options = {}) ->
+    options.objectMode = true
+    super options
 
-  b.write magicString, 0
-  writeInt b, payloadLen, 0 + magicLen
-  writeInt b, msgType, 0 + magicLen + 4
-  b.write payload, 0 + magicLen + 4 + 4
+  _transform: (msg, str, cb) ->
+    {type, payload} = msg
 
-  b
+    payloadLen = Buffer.byteLength payload
+    b = new Buffer msgLen payloadLen
 
-class I3ipcTransform extends Transform
+    b.write magicString, 0
+    writeInt b, payloadLen, 0 + magicLen
+    writeInt b, type, 0 + magicLen + 4
+    b.write payload, 0 + magicLen + 4 + 4
+
+    @push b
+
+    cb()
+
+class I3ipcIn extends Transform
   constructor: (options = {}) ->
     @chunks = []
     @len = null
@@ -40,12 +49,12 @@ class I3ipcTransform extends Transform
     @len = readInt b, magicLen
 
   _unpack_data: (b) ->
-    return null unless b.length >= magicLen + 4 + 4 + @len
+    return null unless b.length >= msgLen @len
 
-    @chunks = [b.slice magicLen + 4 + 4 + @len]
+    @chunks = [b.slice msgLen @len]
     {
       type: readInt b, magicLen + 4
-      payload: b.toString 'utf8', magicLen + 4 + 4, 0 + magicLen + 4 + 4 + @len
+      payload: b.toString 'utf8', magicLen + 4 + 4, msgLen @len
     }
 
   _transform: (chunk, str, cb) ->
@@ -97,7 +106,10 @@ e = new EventEmitter()
 connectToSocket = (path) ->
   socket = net.connect path, -> e.emit 'connected'
 
-  (socket.pipe new I3ipcTransform()).on 'data', (reply) ->
+  out = new I3ipcOut()
+  out.pipe socket
+
+  (socket.pipe new I3ipcIn()).on 'data', (reply) ->
     typeName = responses[reply.type]
     event = typeName
     unless event?
@@ -112,7 +124,7 @@ connectToSocket = (path) ->
       console.warn 'unknown msg type: ' + msgType + '... it will be used directly!'
       type = msgType
 
-    socket.write (pack type, payload)
+    out.write {type: type, payload: payload}
 
 module.exports = exports = (connectListener = null) ->
   e.once 'connected', connectListener if connectListener?
