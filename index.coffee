@@ -62,14 +62,12 @@ clients = [
   (new NodeClient __dirname + '/clock', 'date'),
   (new Client 'i3status -c ~/.i3/status')]
 
-p = null
-
 cache = []
+dirty = false
 pending = false
-send = ->
-  if p == null
-    setImmediate -> send()
-  else if not pending
+
+flush = (p) ->
+  if not pending
     pending = true
     setImmediate ->
       pending = false
@@ -83,7 +81,7 @@ for c, i in clients
   do (i) ->
     c.on 'msg', (msgs...) ->
       cache[i] = msgs
-      send()
+      dirty = true
 
 start = ->
   version = Math.max (c.version for c in clients)...
@@ -94,4 +92,9 @@ start = ->
   p.on 'stop', -> c.stop() for c in clients
   p.on 'cont', -> c.cont() for c in clients
   p.on 'click', (e) -> c.click e for c in clients
+
+  p.on 'connect', ->
+    flush p if dirty
+    for c in clients
+      c.on 'msg', -> flush p
 
