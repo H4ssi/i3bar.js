@@ -6,7 +6,9 @@ module.exports = exports = (options = {}) ->
 
   p = proto options
 
-  text = (t) -> {full_text: t}
+  text = (t) ->
+    full_text: t
+    color: "primary"
 
   def = text 'x'
 

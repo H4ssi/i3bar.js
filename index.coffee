@@ -55,6 +55,9 @@ class NodeClient extends EventEmitter
   stop: -> @client.stop
   cont: -> @client.cont
 
+colors =
+  primary: "#3366ff"
+
 clients = [
   (new NodeClient __dirname + '/brightness'),
   (new NodeClient __dirname + '/click_example'),
@@ -80,6 +83,8 @@ for c, i in clients
     start() if ++readyCount == clients.length
   do (i) ->
     c.on 'msg', (msgs...) ->
+      for m in msgs
+        m.color = colors[m.color] if m.color? and colors[m.color]?
       cache[i] = msgs
       dirty = true
 
