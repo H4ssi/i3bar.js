@@ -10,8 +10,14 @@ proto = require './i3bar-proto'
 sig = require 'get-signal'
 EventEmitter = require 'events'
 
+clientNum = 0
 class Client extends EventEmitter
+  constructor: () ->
+    @id = clientNum++
+
+class ExecClient extends Client
   constructor: (cmd_line) ->
+    super()
     @process = child.spawn 'bash', ['-c', 'exec ' + cmd_line], {detached: true, stdio: ['pipe', 'pipe', process.stderr]}
 
     processHeader = (header) =>
@@ -39,8 +45,9 @@ class Client extends EventEmitter
   stop: -> @process.kill @stop_signal
   cont: -> @process.kill @cont_signal
 
-class NodeClient extends EventEmitter
+class NodeClient extends Client
   constructor: (clientModule, exportedFnName = null) ->
+    super()
     clientModule = require clientModule
 
     clientFn = if exportedFnName? then clientModule[exportedFnName] else clientModule
@@ -65,7 +72,7 @@ clients = [
   (new NodeClient __dirname + '/click_example'),
   (new NodeClient __dirname + '/clock', 'time'),
   (new NodeClient __dirname + '/clock', 'date'),
-  (new Client 'i3status -c ~/.i3/status')]
+  (new ExecClient 'i3status -c ~/.i3/status')]
 
 cache = []
 dirty = false
@@ -88,6 +95,7 @@ for c, i in clients
       msgs = _.clone msgs, true
       for m in msgs
         m.color = colors[m.color] if m.color? and colors[m.color]?
+        m.instance = JSON.stringify {id: @id, orig: m.instance}
       cache[i] = msgs
       dirty = true
 
@@ -99,7 +107,13 @@ start = ->
 
   p.on 'stop', -> c.stop() for c in clients
   p.on 'cont', -> c.cont() for c in clients
-  p.on 'click', (e) -> c.click e for c in clients
+  p.on 'click', (e) ->
+    {id, orig} = JSON.parse e.instance
+    if orig?
+      e.instance = orig
+    else
+      delete e.instance
+    c.click e for c in clients when c.id == id
 
   p.on 'connect', ->
     flush p if dirty
