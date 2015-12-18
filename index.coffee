@@ -1,4 +1,6 @@
 
+_ = require 'lodash'
+
 child = require 'child_process'
 
 oboe = require 'oboe'
@@ -83,6 +85,7 @@ for c, i in clients
     start() if ++readyCount == clients.length
   do (i) ->
     c.on 'msg', (msgs...) ->
+      msgs = _.clone msgs, true
       for m in msgs
         m.color = colors[m.color] if m.color? and colors[m.color]?
       cache[i] = msgs
