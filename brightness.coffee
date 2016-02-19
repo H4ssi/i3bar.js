@@ -35,9 +35,9 @@ module.exports = exports = (options = {}) ->
     if d.binding?.command?
       com = d.binding.command
 
-      if com == 'exec true i3barjs brightness up'
+      if com == 'nop i3barjs brightness up'
         run '-inc', display
-      else if com == 'exec true i3barjs brightness down'
+      else if com == 'nop i3barjs brightness down'
         run '-dec', display
 
   b
