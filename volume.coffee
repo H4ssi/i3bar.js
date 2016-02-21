@@ -13,11 +13,25 @@ parseVolume = (input) ->
   else
     0
 
-run = (plusOrMinus, cb) ->
-  alter = child.spawn 'pactl', ['set-sink-volume', '0', plusOrMinus + '5%']
+muteRx = /Mute: (yes|no)/
+
+parseMute = (input) ->
+  res = muteRx.exec input
+  if res?
+    return res[1] == 'yes'
+  else
+    false
+
+volumeChange = (plusOrMinus) ->
+  ['set-sink-volume', '0', plusOrMinus + '5%']
+
+run = (args, cb) ->
+  alter = child.spawn 'pactl', args
   alter.on 'exit', ->
     read = child.execFile 'pactl', ['list', 'sinks'], (err, stdout) ->
-      cb parseVolume stdout
+      cb
+        volume: parseVolume stdout
+        mute: parseMute stdout
 
 module.exports = exports = (options = {}) ->
   b = bar options
@@ -27,11 +41,14 @@ module.exports = exports = (options = {}) ->
   clearTimeoutId = null
   clear = -> b.send()
 
-  display = (percent) ->
+  display = (data) ->
+    {volume: percent, mute} = data
     max = 10
     dots = Math.round percent / 100 * max
 
     bar = (_.repeat ' ', max - dots) + (_.repeat '#', dots)
+
+    bar = '(' + bar + ')' if mute
 
     b.send {full_text: bar}
 
@@ -45,9 +62,11 @@ module.exports = exports = (options = {}) ->
       com = d.binding.command
 
       if com == 'nop i3barjs volume up'
-        run '+', display
+        run (volumeChange '+'), display
       else if com == 'nop i3barjs volume down'
-        run '-', display
+        run (volumeChange '-'), display
+      else if com == 'nop i3barjs volume toggle'
+        run ['set-sink-mute', '0', 'toggle'], display
 
   b
 
