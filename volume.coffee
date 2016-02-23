@@ -1,6 +1,6 @@
-_ = require 'lodash'
 bar = require './i3bar-proto'
 ipc = require './i3-proto'
+ui = require './ui'
 
 child = require 'child_process'
 
@@ -43,10 +43,7 @@ module.exports = exports = (options = {}) ->
 
   display = (data) ->
     {volume: percent, mute} = data
-    max = 10
-    dots = Math.round percent / 100 * max
-
-    bar = (_.repeat ' ', max - dots) + (_.repeat '#', dots)
+    bar = ui.bar 10, percent
 
     bar = '(' + bar + ')' if mute
 

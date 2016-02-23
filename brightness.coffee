@@ -1,6 +1,6 @@
-_ = require 'lodash'
 bar = require './i3bar-proto'
 ipc = require './i3-proto'
+ui = require './ui'
 
 child = require 'child_process'
 
@@ -19,12 +19,8 @@ module.exports = exports = (options = {}) ->
   clear = -> b.send()
 
   display = (percent) ->
-    max = 10
-    dots = Math.round percent / 100 * max
 
-    bar = (_.repeat ' ', max - dots) + (_.repeat '#', dots)
-
-    b.send {full_text: bar}
+    b.send {full_text: (ui.bar 10, percent)}
 
     clearTimeout clearTimeoutId if clearTimeoutId?
     clearTimeoutId = setTimeout clear, 1000
