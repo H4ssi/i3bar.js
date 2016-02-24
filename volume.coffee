@@ -43,11 +43,8 @@ module.exports = exports = (options = {}) ->
 
   display = (data) ->
     {volume: percent, mute} = data
-    bar = ui.bar 10, percent
 
-    bar = '(' + bar + ')' if mute
-
-    b.send {full_text: bar}
+    b.send {full_text: (ui.bar 10, percent, !mute)}
 
     clearTimeout clearTimeoutId if clearTimeoutId?
     clearTimeoutId = setTimeout clear, 1000
