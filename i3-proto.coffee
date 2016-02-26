@@ -49,7 +49,7 @@ class I3ipcIn extends Transform
     @len = readInt b, magicLen
 
   _unpack_data: (b) ->
-    return null unless b.length >= msgLen @len
+    return unless b.length >= msgLen @len
 
     @chunks = [b.slice msgLen @len]
     {
@@ -60,15 +60,18 @@ class I3ipcIn extends Transform
   _transform: (chunk, str, cb) ->
     @chunks.push chunk
 
-    b = Buffer.concat(@chunks)
+    loop
+      b = Buffer.concat(@chunks)
 
-    @_unpack_len b unless @len?
+      @_unpack_len b unless @len?
 
-    if @len?
+      break unless @len?
+
       data = @_unpack_data b
-      if data?
-        @len = null
-        @push data
+      break unless data?
+
+      @len = null
+      @push data
 
     cb()
 
