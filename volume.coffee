@@ -61,6 +61,8 @@ module.exports = exports = (options = {}) ->
         run (volumeChange '-'), display
       else if com == 'nop i3barjs volume toggle'
         run ['set-sink-mute', '0', 'toggle'], display
+      else if com == 'nop i3barjs volume toggle-mic'
+        run ['set-source-mute', '1', 'toggle'], display
 
   b
 
